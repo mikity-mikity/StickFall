@@ -15,18 +15,46 @@ namespace StickDemo
         public Action<int> action;
         public Label label = new Label();
     }
+    public class myButton : Button
+    {
+        public String name;
+        public Action action;
+
+    }
     public partial class ControlPanel : Form
     {
-        public ControlPanel()
+        public ControlPanel(int Height)
         {
             InitializeComponent();
             this.Width = 400;
-            this.Height = 700;
+            this.Height = Height;
         }
 
         private void ControlPanel_FormClosing(object sender, FormClosingEventArgs e)
         {
             e.Cancel = true;
+        }
+        public void addButton(string name, Action act, int x, int y)
+        {
+            myButton newButton = new myButton();
+            newButton.name = name;
+            newButton.action = act;
+            this.Controls.Add(newButton);
+            newButton.Top = y;
+            newButton.Left = x;
+            newButton.Height = 30;
+            newButton.Width = 60;
+            newButton.Text = newButton.name;
+            newButton.Click += newButton_Click;
+        }
+
+        void newButton_Click(object sender, EventArgs e)
+        {
+            myButton button = (myButton)sender;
+            if (button.action != null)
+            {
+                button.action();
+            }
         }
         public void addSlider(string name, Action<int> act,int min,int max,int defVal,int x,int y)
         {

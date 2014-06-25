@@ -178,6 +178,7 @@ namespace DemoFramework.SharpDX
         uint groundColor;
         uint activeColor;
         uint passiveColor;
+        uint blueColor;
         uint softBodyColor;
         int linkColor = Color.Black.ToArgb();
 
@@ -216,6 +217,7 @@ namespace DemoFramework.SharpDX
             activeColor = ColorToUint(Color.Orange);
             passiveColor = ColorToUint(Color.OrangeRed);
             softBodyColor = ColorToUint(Color.LightBlue);
+            blueColor = ColorToUint(Color.Blue);
         }
 
         public override void RemoveShape(CollisionShape shape)
@@ -321,7 +323,7 @@ namespace DemoFramework.SharpDX
                 InitShapeData(shape).InstanceDataList.Add(new InstanceData()
                 {
                     WorldTransform = transform,
-                    Color = "Ground".Equals(colObj.UserObject) ? groundColor :
+                    Color = "Ground".Equals(colObj.UserObject) ? groundColor :"static".Equals(colObj.UserObject)?blueColor:
                         colObj.ActivationState == ActivationState.ActiveTag ? activeColor : passiveColor
                 });
             }

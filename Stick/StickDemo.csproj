@@ -62,6 +62,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Collada\Collada.csproj">
+      <Project>{5a28319d-6809-4ea6-b085-8e58ce2990ff}</Project>
+      <Name>Collada</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DemoFramework\DemoFramework.csproj">
       <Project>{7f50b160-6c4d-467a-9aab-10c516326bd1}</Project>
       <Name>DemoFramework</Name>
