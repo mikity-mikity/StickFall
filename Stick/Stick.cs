@@ -13,11 +13,12 @@ namespace StickDemo
     class StickDemo : Demo
     {
         double Interval = 1.0d;
+        float scale = 0.1f;
         int count = 0;
         int pathPtCount = 0;
         BoxShape box = null;
         RigidBody stickSample;
-        Vector3 pathStPt, pathEndPtU, pathEndPtV;
+        //Vector3 pathStPt, pathEndPtU, pathEndPtV;
         Vector3[] pos;
         //Variables
         float gravity;
@@ -27,7 +28,7 @@ namespace StickDemo
         float stickSizeX;
         float stickSizeY;
         float stickSizeZ;
-        float releaseHt;
+        //float releaseHt;
         //base
         float baseW;
         float baseD;
@@ -39,12 +40,47 @@ namespace StickDemo
         float obstacleD;
         float obstacleH;
         //Path
-        float pathStX;
-        float pathEndX;
-        int pathDiv = 100;
+        //float pathStX;
+        //float pathEndX;
+        //int pathDiv = 100;
         List<RigidBody> sticks = new List<RigidBody>();
         List<RigidBody> frozenSticks = new List<RigidBody>();
         List<RigidBody> baseBoxes = new List<RigidBody>();
+        void import()
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "TXT(*.txt)|*.txt|Any type(*.*)|*.*";
+            ofd.FilterIndex = 0;
+            ofd.Title = "File Open";
+            ofd.RestoreDirectory = true;
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                string file_name = ofd.FileName;
+                TextReader tr = new StreamReader(file_name);
+                List<double[]> points = new List<double[]>();
+                string line;
+                while ((line = tr.ReadLine()) != null)
+                {
+                    string[] vals=line.Split(',');
+                    if (vals.Length == 3)
+                    {
+                        points.Add(new double[3] { Double.Parse(vals[0]), Double.Parse(vals[1]), Double.Parse(vals[2]) });
+                    }
+                }
+                tr.Close();
+                int N = 10;
+                pos = new Vector3[(points.Count-1)*N];
+                for (int i = 0; i < points.Count-1; i++)
+                {
+                    for (int j = i * N; j < (i + 1) * N; j++)
+                    {
+                        int s = j - i * N;
+                        pos[j] = new Vector3((float)(points[i+1][0] * s / ((float)N) + points[i][0] * (N - s) / ((float)N)) * scale, (float)(points[i+1][2] * s / ((float)N) + points[i][2] * (N - s) / ((float)N)) * scale + 5f, (float)(points[i+1][1] * s / ((float)N) + points[i][1] * (N - s) / ((float)N)) * scale);
+                    }
+                }
+            }
+
+        }
         void export()
         {
             Grendgine_Collada col_scenes = null;
@@ -240,7 +276,7 @@ namespace StickDemo
                 {
                     dropStickAlongPath(pos[pathPtCount]);
                     pathPtCount++;
-                    if (pathPtCount >= pathDiv)
+                    if (pathPtCount >= pos.Length)
                     {
                         pathPtCount = 0;
                     }
@@ -265,11 +301,10 @@ namespace StickDemo
         //Similar to setup()
         protected override void OnInitialize()
         {
-            float scale = 0.1f;
             cp5 = new ControlPanel(900);
             cp5.addSlider("baseW", (val) => { baseW = (float)val * scale; renewBase(); }, 1, 2000, 1000, 20, 40);
-            cp5.addSlider("baseD", (val) => { baseD = (float)val * scale; renewBase(); }, 1, 1000, 70, 20, 90);
-            cp5.addSlider("baseH", (val) => { baseH = (float)val * scale; renewBase(); }, 1, 1000, 150, 20, 140);
+            cp5.addSlider("baseD", (val) => { baseD = (float)val * scale; renewBase(); }, 1, 500, 70, 20, 90);
+            cp5.addSlider("baseH", (val) => { baseH = (float)val * scale; renewBase(); }, 1, 500, 50, 20, 140);
             cp5.addSlider("baseWallThickness", (val) => { baseWallThickness = (float)val * scale; renewBase(); }, 1, 30, 10, 20, 190);
 
             cp5.addSlider("obstacleX", (val) => { obstacleX = val; renewBase(); }, 1, 20, 8, 20, 240);
@@ -282,20 +317,21 @@ namespace StickDemo
             cp5.addSlider("stickSizeY", (val) => { stickSizeY = (float)val * scale; renewStick(); }, 1, 50, 5, 20, 540);
             cp5.addSlider("stickSizeZ", (val) => { stickSizeZ = (float)val * scale; renewStick(); }, 50, 500, 200, 20, 590);
 
-            cp5.addSlider("releaseHt", (val) => { releaseHt = (float)val * scale; renewHeight(); }, 500, 2000, 500, 20, 640);
+            //cp5.addSlider("releaseHt", (val) => { releaseHt = (float)val * scale; renewHeight(); }, 500, 2000, 500, 20, 640);
 
             //cp5.addButton("freeze!", () => { freeze(); }, 20, 690);
             cp5.addButton("Run!", () => { run = !run; }, 20, 740);
-            cp5.addButton("Export!", () => { export(); }, 20, 790);
+            cp5.addButton("Export!", () => { export(); }, 120, 740);
+            cp5.addButton("import path!", () => { import(); }, 220, 740);
             cp5.Show();
             gravity = 300 * scale;
             friction = 1f;
             //stick
             stickMass = 1 * scale;
             //Path
-            pathStX = -500 * scale;
-            pathEndX = 500 * scale;
-            pathDiv = 100;
+            //pathStX = -500 * scale;
+            //pathEndX = 500 * scale;
+            //pathDiv = 100;
 
             Freelook.SetEyeTarget(eye, target);
             Graphics.SetFormText("BulletSharp - Benchmark Demo");
@@ -389,21 +425,21 @@ namespace StickDemo
             ground.UserObject = "Ground";
 
             //Create a dropping path
-            pos = new Vector3[pathDiv];
-            renewHeight();
+            import();
+            //renewHeight();
 
             //Create a base
             baseBoxes = new List<RigidBody>();
             renewBase();
             
             //Create a reference stick
-            box = new BoxShape(stickSizeX/2f, stickSizeZ/2f, stickSizeY/2f);
+            box = new BoxShape(stickSizeX/2f/5f, stickSizeZ/2f/5f, stickSizeY/2f/5f);
             stickSample = LocalCreateRigidBody(0, Matrix.Translation(new Vector3(-50,0,-30)), box);
             renewStick();
         }
         void renewHeight()
         {
-            if (pos == null) return;
+/*            if (pos == null) return;
             pathStPt = new Vector3(0, releaseHt, 0);
             pathEndPtU = new Vector3(pathEndX, releaseHt, 0);
             pathEndPtV = new Vector3(0, releaseHt, pathEndX);
@@ -416,23 +452,30 @@ namespace StickDemo
                 Vector3 pathPos = pathStPt + pathDirU*((float)Math.Cos(theta)) + pathDirV*( (float)Math.Sin(theta));
                 pos[i] = new Vector3(pathPos.X, pathPos.Y, pathPos.Z);
             }
+ * */
         }
         void renewStick()
         {
             if (box == null) return;
-            box = new BoxShape(stickSizeX/2f, stickSizeZ/2f, stickSizeY/2f);
+            box = new BoxShape(stickSizeX/2f/5f, stickSizeZ/2f/5f, stickSizeY/2f/5f);
             stickSample.CollisionShape = box;
         }
         void renewBase()
         {
             if (pos == null) return;
             if (baseBoxes == null) return;
+            foreach (var f in baseBoxes)
+            {
+                World.RemoveRigidBody(f);
+            }
+            baseBoxes.Clear();
             BoxShape brickAD = null;
             BoxShape brickBC = null;
-            for (int i = 0; i < pathDiv; i++)
+            int S = 700;
+            for (int i = 0; i < S; i++)
             {
                 int j = i + 1;
-                if (j == pathDiv) j = 0;
+                //if (j == S) j = 0;
                 Vector3 P = pos[i];
                 Vector3 Q = pos[j];
                 P.Y = 0;
@@ -448,7 +491,7 @@ namespace StickDemo
                     brickAD = new BoxShape((A - D).Length() / 2f, baseH / 2f, baseWallThickness / 2f);
                     brickBC = new BoxShape((B - C).Length() / 2f, baseH / 2f, baseWallThickness / 2f);
                 }
-                double theta = -2 * Math.PI * ((double)i / pathDiv)+Math.PI/2d;
+                double theta = -2 * Math.PI * ((double)i / pos.Length)+Math.PI/2d;
                 
                 Matrix T;
                 T=Matrix.RotationY((float)theta);
@@ -461,7 +504,7 @@ namespace StickDemo
                 T = T * Matrix.Translation(0, baseH/2f, 0);
                 baseBoxes.Add(LocalCreateRigidBody(0, T, brickBC));
             }
-
+            
         }
         public override RigidBody LocalCreateRigidBody(float mass, Matrix startTransform, CollisionShape shape)
         {
