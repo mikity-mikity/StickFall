@@ -45,7 +45,7 @@ namespace DemoFramework
 
             // MouseController is Y-up, convert to Up-up
             Matrix swapAxis = Matrix.RotationAxis(Vector3.Cross(Vector3.UnitY, Up), Angle(Vector3.UnitY, Up));
-            Vector3 direction = Vector3.TransformCoordinate(-mouseController.Vector, swapAxis);
+            Vector3 direction = Vector3.TransformCoordinate(mouseController.Vector, swapAxis);
 
             if (input.KeysDown.Count != 0)
             {
@@ -70,8 +70,8 @@ namespace DemoFramework
                     Eye -= Vector3.Cross(relDirection, Up);
                 }
             }
-            Target = Eye + (Eye - Target).Length() * direction;
-
+            //Target = Eye + (Eye - Target).Length() * direction;
+            Eye = Target + (Target - Eye).Length() * direction;
             return true;
         }
 

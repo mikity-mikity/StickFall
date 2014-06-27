@@ -16,10 +16,8 @@ namespace StickDemo
         int count = 0;
         int pathPtCount = 0;
         BoxShape box = null;
-        CompoundShape bComp;
-        RigidBody bCompRigidBody;
         RigidBody stickSample;
-        Vector3 pathStPt, pathEndPt;
+        Vector3 pathStPt, pathEndPtU, pathEndPtV;
         Vector3[] pos;
         //Variables
         float gravity;
@@ -46,6 +44,7 @@ namespace StickDemo
         int pathDiv = 100;
         List<RigidBody> sticks = new List<RigidBody>();
         List<RigidBody> frozenSticks = new List<RigidBody>();
+        List<RigidBody> baseBoxes = new List<RigidBody>();
         void export()
         {
             Grendgine_Collada col_scenes = null;
@@ -63,15 +62,16 @@ namespace StickDemo
             col_scenes.Asset.Unit.Name = "centimeter";
             col_scenes.Asset.Up_Axis = "Y_UP";
             col_scenes.Library_Geometries = new Grendgine_Collada_Library_Geometries();
-            List<RigidBody> sticksAll = new List<RigidBody>();
-            sticksAll.AddRange(sticks);
-            sticksAll.AddRange(frozenSticks);
-            col_scenes.Library_Geometries.Geometry = new Grendgine_Collada_Geometry[sticksAll.Count];
-            for (int i = 0; i < sticksAll.Count; i++)
+            List<RigidBody> boxesAll = new List<RigidBody>();
+            boxesAll.AddRange(sticks);
+            boxesAll.AddRange(frozenSticks);
+            boxesAll.AddRange(baseBoxes);
+            col_scenes.Library_Geometries.Geometry = new Grendgine_Collada_Geometry[boxesAll.Count];
+            for (int i = 0; i < boxesAll.Count; i++)
             {
                 col_scenes.Library_Geometries.Geometry[i] = new Grendgine_Collada_Geometry();
                 Grendgine_Collada_Geometry geom = col_scenes.Library_Geometries.Geometry[i];
-                string uniqueID = "Stick"+i.ToString();
+                string uniqueID = "Box"+i.ToString();
                 geom.ID = uniqueID + "-lib";
                 geom.Name = uniqueID + "Mesh";
                 geom.Mesh = new Grendgine_Collada_Mesh();
@@ -87,30 +87,37 @@ namespace StickDemo
                 //ConvexShape
                 int nV=0;
                 int nF=0;
-                if (sticksAll[i].CollisionShape.IsPolyhedral&&sticksAll[i].CollisionShape.IsConvex)
+                if (boxesAll[i].CollisionShape.IsPolyhedral && boxesAll[i].CollisionShape.IsConvex)
                 {
-                    PolyhedralConvexShape shape = (PolyhedralConvexShape)sticksAll[i].CollisionShape;
-                    nV=shape.VertexCount;
-                    nF=shape.PlaneCount;
-                    geom.Mesh.Source[0].Float_Array.Count = nV * 3;
-                    float[][] vertices = new float[8][];
-                    vertices[0] = new float[3] { -stickSizeX / 2f, -stickSizeZ / 2f, -stickSizeY / 2f };
-                    vertices[1] = new float[3] { -stickSizeX / 2f, -stickSizeZ / 2f, stickSizeY / 2f };
-                    vertices[2] = new float[3] { stickSizeX / 2f, -stickSizeZ / 2f, -stickSizeY / 2f };
-                    vertices[3] = new float[3] { stickSizeX / 2f, -stickSizeZ / 2f, stickSizeY / 2f };
-                    vertices[4] = new float[3] { -stickSizeX / 2f, stickSizeZ / 2f, -stickSizeY / 2f };
-                    vertices[5] = new float[3] { -stickSizeX / 2f, stickSizeZ / 2f, stickSizeY / 2f };
-                    vertices[6] = new float[3] { stickSizeX / 2f, stickSizeZ / 2f, -stickSizeY / 2f };
-                    vertices[7] = new float[3] { stickSizeX / 2f, stickSizeZ / 2f, stickSizeY / 2f };
-                    string val = "";
-                    for (int j = 0; j < 8; j++)
+                    if (boxesAll[i].CollisionShape is BoxShape)
                     {
-                        for (int k = 0; k < 3; k++)
+                        BoxShape shape = (BoxShape)boxesAll[i].CollisionShape;
+                        Vector3 size = shape.HalfExtentsWithMargin;
+                        double[][] vertices = new double[8][];
+                        for (int x = -1; x < 2; x+=2)
                         {
-                            val += "  "+vertices[j][k].ToString();
+                            for (int y = -1; y < 2; y += 2)
+                            {
+                                for (int z = -1; z < 2; z += 2)
+                                {
+                                    int index = ((x + 1) / 2) * 4 + ((y + 1) / 2) * 2 + ((z + 1) / 2) * 1;
+                                    vertices[index] = new double[3] { size.X * x, size.Y * y, size.Z * z };
+                                }
+                            }
                         }
+                        nV = 8;
+                        nF = 12;
+                        geom.Mesh.Source[0].Float_Array.Count = nV * 3;
+                        string val = "";
+                        for (int j = 0; j < 8; j++)
+                        {
+                            for (int k = 0; k < 3; k++)
+                            {
+                                val += "  " + vertices[j][k].ToString();
+                            }
+                        }
+                        geom.Mesh.Source[0].Float_Array.Value_As_String = val;// "0.0 0.0 0.0 1.0 0.0 0.0 0.0 1.0 0.0 1.0 1.0 0.0 0.0 0.0 1.0 1.0 0.0 1.0 0.0 1.0 1.0 1.0 1.0 1.0";
                     }
-                    geom.Mesh.Source[0].Float_Array.Value_As_String = val;// "0.0 0.0 0.0 1.0 0.0 0.0 0.0 1.0 0.0 1.0 1.0 0.0 0.0 0.0 1.0 1.0 0.0 1.0 0.0 1.0 1.0 1.0 1.0 1.0";
                 }
                 geom.Mesh.Source[0].Technique_Common = new Grendgine_Collada_Technique_Common_Source();
                 geom.Mesh.Source[0].Technique_Common.Accessor = new Grendgine_Collada_Accessor();
@@ -153,12 +160,12 @@ namespace StickDemo
             scene.ID = "test";
             scene.Name = "test";
 
-            scene.Node = new Grendgine_Collada_Node[sticksAll.Count];
-            for (int i = 0; i < sticksAll.Count; i++)
+            scene.Node = new Grendgine_Collada_Node[boxesAll.Count];
+            for (int i = 0; i < boxesAll.Count; i++)
             {
-                string uniqueID = "Stick" + i.ToString();
+                string uniqueID = "Box" + i.ToString();
                 Grendgine_Collada_Geometry geom = col_scenes.Library_Geometries.Geometry[i];
-                Matrix T = sticksAll[i].WorldTransform;
+                Matrix T = boxesAll[i].WorldTransform;
 
                 scene.Node[i] = new Grendgine_Collada_Node();
                 scene.Node[i].Name = uniqueID;
@@ -188,7 +195,7 @@ namespace StickDemo
             XmlSerializer sr = new XmlSerializer(typeof(Grendgine_Collada));
             SaveFileDialog sfd = new SaveFileDialog();
             sfd.FileName = "sticks.dae";
-            sfd.Filter = "COLLADA(*.dae)|Any type(*.*)";
+            sfd.Filter = "COLLADA(*.dae)|*.dae|Any type(*.*)|*.*";
             sfd.FilterIndex = 0;
             sfd.Title = "File Open";
             sfd.RestoreDirectory = true;
@@ -261,9 +268,9 @@ namespace StickDemo
             float scale = 0.1f;
             cp5 = new ControlPanel(900);
             cp5.addSlider("baseW", (val) => { baseW = (float)val * scale; renewBase(); }, 1, 2000, 1000, 20, 40);
-            cp5.addSlider("baseD", (val) => { baseD = (float)val * scale; renewBase(); }, 1, 1000, 50, 20, 90);
+            cp5.addSlider("baseD", (val) => { baseD = (float)val * scale; renewBase(); }, 1, 1000, 70, 20, 90);
             cp5.addSlider("baseH", (val) => { baseH = (float)val * scale; renewBase(); }, 1, 1000, 150, 20, 140);
-            cp5.addSlider("baseWallThickness", (val) => { baseWallThickness = (float)val * scale; renewBase(); }, 1, 30, 20, 20, 190);
+            cp5.addSlider("baseWallThickness", (val) => { baseWallThickness = (float)val * scale; renewBase(); }, 1, 30, 10, 20, 190);
 
             cp5.addSlider("obstacleX", (val) => { obstacleX = val; renewBase(); }, 1, 20, 8, 20, 240);
             cp5.addSlider("obstacleY", (val) => { obstacleY = val; renewBase(); }, 1, 10, 1, 20, 290);
@@ -297,16 +304,6 @@ namespace StickDemo
                                     "Space - Shoot box\n" +
                                     "Total boxes:" + count);
 
-            pos = new Vector3[pathDiv];
-            pathStPt = new Vector3(pathStX, releaseHt,0);
-            pathEndPt = new Vector3(pathEndX, releaseHt,0);
-            Vector3 pathPos = new Vector3(pathStPt.X, pathStPt.Y, pathStPt.Z);
-            Vector3 pathDir = new Vector3((pathEndPt.X - pathStPt.X) / pathDiv, (pathEndPt.Y - pathStPt.Y) / pathDiv, (pathEndPt.Z - pathStPt.Z) / pathDiv);
-            for (int i = 0; i < pathDiv; i++)
-            {
-                pathPos += pathDir;
-                pos[i] = new Vector3(pathPos.X, pathPos.Y, pathPos.Z);
-            }
         }
 
         ThreadSupportInterface CreateSolverThreadSupport(int maxNumThreads)
@@ -387,12 +384,19 @@ namespace StickDemo
 
             // create the ground
             CollisionShape plane = new StaticPlaneShape(new Vector3(0,1,0),0);
-            //CollisionShape groundShape = new BoxShape(250, 50, 250);
             CollisionShapes.Add(plane);
             CollisionObject ground = base.LocalCreateRigidBody(0, Matrix.Translation(0, 0, 0), plane);
             ground.UserObject = "Ground";
-            bComp = new CompoundShape(true);
+
+            //Create a dropping path
+            pos = new Vector3[pathDiv];
+            renewHeight();
+
+            //Create a base
+            baseBoxes = new List<RigidBody>();
             renewBase();
+            
+            //Create a reference stick
             box = new BoxShape(stickSizeX/2f, stickSizeZ/2f, stickSizeY/2f);
             stickSample = LocalCreateRigidBody(0, Matrix.Translation(new Vector3(-50,0,-30)), box);
             renewStick();
@@ -400,13 +404,16 @@ namespace StickDemo
         void renewHeight()
         {
             if (pos == null) return;
-            pathStPt = new Vector3(pathStX, releaseHt, 0);
-            pathEndPt = new Vector3(pathEndX, releaseHt, 0);
-            Vector3 pathPos = new Vector3(pathStPt.X, pathStPt.Y, pathStPt.Z);
-            Vector3 pathDir = new Vector3((pathEndPt.X - pathStPt.X) / pathDiv, (pathEndPt.Y - pathStPt.Y) / pathDiv, (pathEndPt.Z - pathStPt.Z) / pathDiv);
+            pathStPt = new Vector3(0, releaseHt, 0);
+            pathEndPtU = new Vector3(pathEndX, releaseHt, 0);
+            pathEndPtV = new Vector3(0, releaseHt, pathEndX);
+            //Vector3 pathPos = new Vector3(pathStPt.X, pathStPt.Y, pathStPt.Z);
+            Vector3 pathDirU = new Vector3((pathEndPtU.X - pathStPt.X) , (pathEndPtU.Y - pathStPt.Y) , (pathEndPtU.Z - pathStPt.Z) );
+            Vector3 pathDirV = new Vector3((pathEndPtV.X - pathStPt.X) , (pathEndPtV.Y - pathStPt.Y) , (pathEndPtV.Z - pathStPt.Z) );
             for (int i = 0; i < pathDiv; i++)
             {
-                pathPos += pathDir;
+                double theta = 2 * Math.PI * ((double)i / pathDiv);
+                Vector3 pathPos = pathStPt + pathDirU*((float)Math.Cos(theta)) + pathDirV*( (float)Math.Sin(theta));
                 pos[i] = new Vector3(pathPos.X, pathPos.Y, pathPos.Z);
             }
         }
@@ -418,24 +425,42 @@ namespace StickDemo
         }
         void renewBase()
         {
-            if (bComp == null) return;
-            CollisionShapes.Remove(bComp);
-            if (bCompRigidBody != null) World.RemoveRigidBody(bCompRigidBody);
-            bComp = new CompoundShape(true);
-            bComp.AddChildShape(Matrix.Translation(new Vector3(0, baseH / 2, -(baseD / 2) - (baseWallThickness / 2))), new BoxShape(new Vector3(baseW / 2f + (baseWallThickness), baseH / 2f, baseWallThickness / 2f)));
-            bComp.AddChildShape(Matrix.Translation(new Vector3((baseW / 2) + (baseWallThickness / 2), baseH / 2, 0)), new BoxShape(new Vector3(baseWallThickness / 2f, baseH / 2f, baseD / 2f)));
-            bComp.AddChildShape(Matrix.Translation(new Vector3(0, baseH / 2, baseD / 2 + (baseWallThickness / 2))), new BoxShape(new Vector3(baseW / 2f + (baseWallThickness), baseH / 2f, baseWallThickness / 2f)));
-            bComp.AddChildShape(Matrix.Translation(new Vector3(-(baseW / 2) - (baseWallThickness / 2), baseH / 2, 0)), new BoxShape(new Vector3(baseWallThickness / 2f, baseH / 2f, baseD / 2f)));
-            // convert obstacles
-            for (int i = 1; i <= obstacleX; i++)
+            if (pos == null) return;
+            if (baseBoxes == null) return;
+            BoxShape brickAD = null;
+            BoxShape brickBC = null;
+            for (int i = 0; i < pathDiv; i++)
             {
-                for (int j = 1; j <= obstacleY; j++)
+                int j = i + 1;
+                if (j == pathDiv) j = 0;
+                Vector3 P = pos[i];
+                Vector3 Q = pos[j];
+                P.Y = 0;
+                Q.Y = 0;
+                Vector3 dP = Vector3.Normalize(P) * baseD / 2f;
+                Vector3 dQ = Vector3.Normalize(Q) * baseD / 2f;
+                Vector3 A = P + dP;
+                Vector3 B = P - dP;
+                Vector3 C = Q - dQ;
+                Vector3 D = Q + dQ;
+                if (i == 0)
                 {
-                    bComp.AddChildShape(Matrix.Translation(new Vector3(((baseW / (obstacleX + 1)) * i) - baseW / 2, obstacleH / 2, ((baseD / (obstacleY + 1)) * j) - baseD / 2)), new BoxShape(new Vector3(obstacleW / 2f, obstacleH / 2f, obstacleD / 2f)));
+                    brickAD = new BoxShape((A - D).Length() / 2f, baseH / 2f, baseWallThickness / 2f);
+                    brickBC = new BoxShape((B - C).Length() / 2f, baseH / 2f, baseWallThickness / 2f);
                 }
+                double theta = -2 * Math.PI * ((double)i / pathDiv)+Math.PI/2d;
+                
+                Matrix T;
+                T=Matrix.RotationY((float)theta);
+                T=T*Matrix.Translation((A+D)/2f);
+                T = T * Matrix.Translation(0, baseH / 2f, 0);
+                baseBoxes.Add(LocalCreateRigidBody(0, T, brickAD));
+
+                T = Matrix.RotationY((float)theta);
+                T = T*Matrix.Translation((B + C) / 2f);
+                T = T * Matrix.Translation(0, baseH/2f, 0);
+                baseBoxes.Add(LocalCreateRigidBody(0, T, brickBC));
             }
-            CollisionShapes.Add(bComp);
-            bCompRigidBody=LocalCreateRigidBody(0, Matrix.Translation(0, 0, 0), bComp);
 
         }
         public override RigidBody LocalCreateRigidBody(float mass, Matrix startTransform, CollisionShape shape)
@@ -454,7 +479,7 @@ namespace StickDemo
             rbInfo.Dispose();
             body.ContactProcessingThreshold = defaultContactProcessingThreshold;
             body.WorldTransform = startTransform;
-
+            body.SetDamping(0.01f, 0.01f);
             World.AddRigidBody(body);
             return body;
         }

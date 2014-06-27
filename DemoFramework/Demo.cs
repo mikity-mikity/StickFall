@@ -9,7 +9,7 @@ namespace DemoFramework
     {
         protected Boolean run = false;
 
-        Graphics _graphics;
+        protected Graphics _graphics;
         protected Graphics Graphics
         {
             get { return _graphics; }
@@ -203,7 +203,7 @@ namespace DemoFramework
 
         public virtual void OnUpdate()
         {
-            float timeStep = 0.1f;
+            float timeStep = 0.2f;
             _frameDelta = clock.Update();
             //_frameDelta = 0.05f;
             frameAccumulator += _frameDelta;

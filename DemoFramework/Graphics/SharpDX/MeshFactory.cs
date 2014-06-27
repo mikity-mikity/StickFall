@@ -219,7 +219,14 @@ namespace DemoFramework.SharpDX
             softBodyColor = ColorToUint(Color.LightBlue);
             blueColor = ColorToUint(Color.Blue);
         }
-
+        public ShapeData Get(CollisionShape shape)
+        {
+            if (shapes.ContainsKey(shape))
+            {
+               return shapes[shape];
+            }
+            return null;
+        }
         public override void RemoveShape(CollisionShape shape)
         {
             if (shapes.ContainsKey(shape))
