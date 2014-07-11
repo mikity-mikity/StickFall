@@ -373,8 +373,7 @@ namespace StickDemo
         {
             // collision configuration contains default setup for memory, collision setup
             DefaultCollisionConstructionInfo cci = new DefaultCollisionConstructionInfo();
-            cci.DefaultMaxPersistentManifoldPoolSize = 32768*30;
-            //cci.DefaultMaxCollisionAlgorithmPoolSize=
+            cci.DefaultMaxPersistentManifoldPoolSize = 32768*40;
             CollisionConf = new DefaultCollisionConfiguration(cci);
 
             if (UseParallelDispatcherBenchmark)
