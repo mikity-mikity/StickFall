@@ -20,6 +20,7 @@ namespace StickDemo
         RigidBody stickSample;
         //Vector3 pathStPt, pathEndPtU, pathEndPtV;
         Vector3[] pos;
+        Vector3[] _pos;
         //Variables
         float gravity;
         float friction;
@@ -68,14 +69,19 @@ namespace StickDemo
                     }
                 }
                 tr.Close();
+                _pos = new Vector3[points.Count];
+                for (int i = 0; i < points.Count; i++)
+                {
+                    _pos[i] = new Vector3((float)points[i][0] * scale, (float)points[i][2] * scale + 10f, (float)points[i][1] * scale);
+                }
                 int N = 10;
-                pos = new Vector3[(points.Count-1)*N];
-                for (int i = 0; i < points.Count-1; i++)
+                pos = new Vector3[(points.Count - 1) * N];
+                for (int i = 0; i < points.Count - 1; i++)
                 {
                     for (int j = i * N; j < (i + 1) * N; j++)
                     {
                         int s = j - i * N;
-                        pos[j] = new Vector3((float)(points[i+1][0] * s / ((float)N) + points[i][0] * (N - s) / ((float)N)) * scale, (float)(points[i+1][2] * s / ((float)N) + points[i][2] * (N - s) / ((float)N)) * scale + 5f, (float)(points[i+1][1] * s / ((float)N) + points[i][1] * (N - s) / ((float)N)) * scale);
+                        pos[j] = new Vector3((float)(points[i+1][0] * s / ((float)N) + points[i][0] * (N - s) / ((float)N)) * scale, (float)(points[i+1][2] * s / ((float)N) + points[i][2] * (N - s) / ((float)N)) * scale + 10f, (float)(points[i+1][1] * s / ((float)N) + points[i][1] * (N - s) / ((float)N)) * scale);
                     }
                 }
             }
@@ -471,34 +477,57 @@ namespace StickDemo
             baseBoxes.Clear();
             BoxShape brickAD = null;
             BoxShape brickBC = null;
-            int S = 700;
+            int S = 70;
             for (int i = 0; i < S; i++)
             {
                 int j = i + 1;
+                int k = i + 2;
                 //if (j == S) j = 0;
-                Vector3 P = pos[i];
-                Vector3 Q = pos[j];
+                Vector3 P = _pos[i];
+                Vector3 Q = _pos[j];
+                Vector3 R = _pos[k];
                 P.Y = 0;
                 Q.Y = 0;
-                Vector3 dP = Vector3.Normalize(P) * baseD / 2f;
-                Vector3 dQ = Vector3.Normalize(Q) * baseD / 2f;
+                R.Y = 0;
+                Matrix M=Matrix.Identity;
+                M.M11 = 2 * (P - Q).X;
+                M.M12 = 2 * (P - Q).Y;
+                M.M13 = 2 * (P - Q).Z;
+                M.M21 = 2 * (P - R).X;
+                M.M22 = 2 * (P - R).Y;
+                M.M23 = 2 * (P - R).Z;
+                M.M31 = 0;
+                M.M32 = 1;
+                M.M33 = 0;
+                Vector4 b = new Vector4(P.LengthSquared() - Q.LengthSquared(), P.LengthSquared() - R.LengthSquared(), 0, 1);
+                Matrix m=Matrix.Invert(M);
+                float cx = Vector4.Dot(m.get_Rows(0), b);
+                float cy = Vector4.Dot(m.get_Rows(1), b);
+                float cz = Vector4.Dot(m.get_Rows(2), b);
+                Vector3 center = new Vector3(cx, cy, cz);
+                Vector3 P2 = new Vector3(P.X - cx, P.Y - cy, P.Z - cz);
+                Vector3 Q2 = new Vector3(Q.X - cx, Q.Y - cy, Q.Z - cz);
+                Vector3 PQ=P-Q;
+                P.Y = 0;
+                Q.Y = 0;
+                P2.Y = 0;
+                Q2.Y = 0;
+                Vector3 dP = Vector3.Normalize(P2) * baseD / 2f;
+                Vector3 dQ = Vector3.Normalize(Q2) * baseD / 2f;
                 Vector3 A = P + dP;
                 Vector3 B = P - dP;
                 Vector3 C = Q - dQ;
                 Vector3 D = Q + dQ;
-                if (i == 0)
-                {
-                    brickAD = new BoxShape((A - D).Length() / 2f, baseH / 2f, baseWallThickness / 2f);
-                    brickBC = new BoxShape((B - C).Length() / 2f, baseH / 2f, baseWallThickness / 2f);
-                }
-                double theta = -2 * Math.PI * ((double)i / pos.Length)+Math.PI/2d;
-                
+                brickAD = new BoxShape((A - D).Length() / 2f, baseH / 2f, baseWallThickness / 2f);
+                brickBC = new BoxShape((B - C).Length() / 2f, baseH / 2f, baseWallThickness / 2f);
+                PQ.Normalize();
+                double theta=Math.Acos(PQ.X);
+                if (PQ.Z > 0) theta = -theta;
                 Matrix T;
                 T=Matrix.RotationY((float)theta);
                 T=T*Matrix.Translation((A+D)/2f);
                 T = T * Matrix.Translation(0, baseH / 2f, 0);
                 baseBoxes.Add(LocalCreateRigidBody(0, T, brickAD));
-
                 T = Matrix.RotationY((float)theta);
                 T = T*Matrix.Translation((B + C) / 2f);
                 T = T * Matrix.Translation(0, baseH/2f, 0);
