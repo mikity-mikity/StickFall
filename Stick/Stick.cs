@@ -19,7 +19,7 @@ namespace StickDemo
         BoxShape box = null;
         RigidBody stickSample;
         //Vector3 pathStPt, pathEndPtU, pathEndPtV;
-        Vector3[] pos;
+        List<Vector3> pos;
         Vector3[] _pos;
         //Variables
         float gravity;
@@ -59,6 +59,8 @@ namespace StickDemo
                 string file_name = ofd.FileName;
                 TextReader tr = new StreamReader(file_name);
                 List<double[]> points = new List<double[]>();
+                List<double> elems = new List<double>();
+                List<double> sortedList = new List<double>();
                 string line;
                 while ((line = tr.ReadLine()) != null)
                 {
@@ -74,14 +76,48 @@ namespace StickDemo
                 {
                     _pos[i] = new Vector3((float)points[i][0] * scale, (float)points[i][2] * scale + 10f, (float)points[i][1] * scale);
                 }
-                int N = 10;
-                pos = new Vector3[(points.Count - 1) * N];
-                for (int i = 0; i < points.Count - 1; i++)
+                /*for (int i = 0; i < points.Count-1; i++)
                 {
-                    for (int j = i * N; j < (i + 1) * N; j++)
+                    var P = points[i];
+                    var Q = points[i + 1];
+                    double x = Q[0] - P[0];
+                    double y = Q[1] - P[1];
+                    double z = Q[2] - P[2];
+                    elems.Add(Math.Sqrt(x * x + y * y + z * z));
+                    sortedList.Add(Math.Sqrt(x * x + y * y + z * z));
+                }
+                sortedList.Sort();
+                double max = 0;
+                int Index=0;
+                for (int i = 0; i < sortedList.Count-1; i++)
+                {
+                    if ((sortedList[i + 1] - sortedList[i]) > max) max = sortedList[i + 1] - sortedList[i];
+                    Index = i;
+                }
+                double threshold = (sortedList[Index + 1] + sortedList[Index]) / 2d;
+                */
+                int N = 10;
+                pos = new List<Vector3>();//new Vector3[(points.Count - 1) * N];
+                for (int i = 0; i < points.Count - 2; i++)
+                {
+
+                    double x = points[i + 1][0] - points[i][0];
+                    double y = points[i + 1][1] - points[i][1];
+                    double z = points[i + 1][2] - points[i][2];
+                    double x2 = points[i + 2][0] - points[i + 1][0];
+                    double y2 = points[i + 2][1] - points[i + 1][1];
+                    double z2 = points[i + 2][2] - points[i + 1][2];
+                    double val = Math.Sqrt(x * x + y * y + z * z);
+                    double val2 = Math.Sqrt(x2 * x2 + y2 * y2 + z2 * z2);
+
+                    if (val<val2*1.5)
                     {
-                        int s = j - i * N;
-                        pos[j] = new Vector3((float)(points[i+1][0] * s / ((float)N) + points[i][0] * (N - s) / ((float)N)) * scale, (float)(points[i+1][2] * s / ((float)N) + points[i][2] * (N - s) / ((float)N)) * scale + 10f, (float)(points[i+1][1] * s / ((float)N) + points[i][1] * (N - s) / ((float)N)) * scale);
+                        for (int j = i * N; j < (i + 1) * N; j++)
+                        {
+
+                            int s = j - i * N;
+                            pos.Add(new Vector3((float)(points[i + 1][0] * s / ((float)N) + points[i][0] * (N - s) / ((float)N)) * scale, (float)(points[i + 1][2] * s / ((float)N) + points[i][2] * (N - s) / ((float)N)) * scale + 10f, (float)(points[i + 1][1] * s / ((float)N) + points[i][1] * (N - s) / ((float)N)) * scale));
+                        }
                     }
                 }
             }
@@ -282,7 +318,7 @@ namespace StickDemo
                 {
                     dropStickAlongPath(pos[pathPtCount]);
                     pathPtCount++;
-                    if (pathPtCount >= pos.Length)
+                    if (pathPtCount >= pos.Count)
                     {
                         pathPtCount = 0;
                     }
@@ -373,7 +409,7 @@ namespace StickDemo
         {
             // collision configuration contains default setup for memory, collision setup
             DefaultCollisionConstructionInfo cci = new DefaultCollisionConstructionInfo();
-            cci.DefaultMaxPersistentManifoldPoolSize = 32768*40;
+            cci.DefaultMaxPersistentManifoldPoolSize = 32768*30;
             CollisionConf = new DefaultCollisionConfiguration(cci);
 
             if (UseParallelDispatcherBenchmark)
@@ -435,12 +471,33 @@ namespace StickDemo
 
             //Create a base
             baseBoxes = new List<RigidBody>();
-            renewBase();
+            //renewBase();
             
             //Create a reference stick
-            box = new BoxShape(stickSizeX/2f/5f, stickSizeZ/2f/5f, stickSizeY/2f/5f);
+            box = new BoxShape(stickSizeX/2f/3f, stickSizeZ/2f/3f, stickSizeY/2f/3f);
             stickSample = LocalCreateRigidBody(0, Matrix.Translation(new Vector3(-50,0,-30)), box);
-            renewStick();
+            //makeManyBoxes();
+            //renewStick();
+        }
+        void makeManyBoxes()
+        {
+            float margin=0.02f;
+            BoxShape tinyBox = new BoxShape(0.2f - margin, 0.2f - margin, 0.2f - margin);
+            for (int x = 0; x < 200; x++)
+            {
+                for (int y = 0; y < 200; y++)
+                {
+                    if (y < 50)
+                    {
+                        RigidBody tinyBoxBody = LocalCreateRigidBody(0, Matrix.Translation(new Vector3(x - 100, y + 5, 0)), tinyBox);
+                    }
+                    else
+                    {
+                        RigidBody tinyBoxBody = LocalCreateRigidBody(1, Matrix.Translation(new Vector3(x - 100, y + 5, 0)), tinyBox);
+                    }
+                    
+                }
+            }
         }
         void renewHeight()
         {
