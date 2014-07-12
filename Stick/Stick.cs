@@ -76,26 +76,7 @@ namespace StickDemo
                 {
                     _pos[i] = new Vector3((float)points[i][0] * scale, (float)points[i][2] * scale + 10f, (float)points[i][1] * scale);
                 }
-                /*for (int i = 0; i < points.Count-1; i++)
-                {
-                    var P = points[i];
-                    var Q = points[i + 1];
-                    double x = Q[0] - P[0];
-                    double y = Q[1] - P[1];
-                    double z = Q[2] - P[2];
-                    elems.Add(Math.Sqrt(x * x + y * y + z * z));
-                    sortedList.Add(Math.Sqrt(x * x + y * y + z * z));
-                }
-                sortedList.Sort();
-                double max = 0;
-                int Index=0;
-                for (int i = 0; i < sortedList.Count-1; i++)
-                {
-                    if ((sortedList[i + 1] - sortedList[i]) > max) max = sortedList[i + 1] - sortedList[i];
-                    Index = i;
-                }
-                double threshold = (sortedList[Index + 1] + sortedList[Index]) / 2d;
-                */
+
                 int N = 10;
                 pos = new List<Vector3>();//new Vector3[(points.Count - 1) * N];
                 for (int i = 0; i < points.Count - 2; i++)
@@ -476,14 +457,14 @@ namespace StickDemo
             //Create a reference stick
             box = new BoxShape(stickSizeX/2f/3f, stickSizeZ/2f/3f, stickSizeY/2f/3f);
             stickSample = LocalCreateRigidBody(0, Matrix.Translation(new Vector3(-50,0,-30)), box);
-            //makeManyBoxes();
+            makeManyBoxes();
             //renewStick();
         }
         void makeManyBoxes()
         {
             float margin=0.02f;
             BoxShape tinyBox = new BoxShape(0.2f - margin, 0.2f - margin, 0.2f - margin);
-            for (int x = 0; x < 200; x++)
+            /*for (int x = 0; x < 200; x++)
             {
                 for (int y = 0; y < 200; y++)
                 {
@@ -497,6 +478,10 @@ namespace StickDemo
                     }
                     
                 }
+            }*/
+            foreach (var v in _pos)
+            {
+                RigidBody tinyBoxBody = LocalCreateRigidBody(0, Matrix.Translation(v), tinyBox);
             }
         }
         void renewHeight()
