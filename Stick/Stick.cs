@@ -20,7 +20,9 @@ namespace StickDemo
         RigidBody stickSample;
         //Vector3 pathStPt, pathEndPtU, pathEndPtV;
         List<Vector3> pos;
+        List<double[]> points;
         Vector3[] _pos;
+        List<RigidBody> manyBoxes;
         //Variables
         float gravity;
         float friction;
@@ -29,7 +31,7 @@ namespace StickDemo
         float stickSizeX;
         float stickSizeY;
         float stickSizeZ;
-        //float releaseHt;
+        float releaseHt;
         //base
         float baseW;
         float baseD;
@@ -58,10 +60,10 @@ namespace StickDemo
             {
                 string file_name = ofd.FileName;
                 TextReader tr = new StreamReader(file_name);
-                List<double[]> points = new List<double[]>();
                 List<double> elems = new List<double>();
                 List<double> sortedList = new List<double>();
                 string line;
+                points = new List<double[]>();
                 while ((line = tr.ReadLine()) != null)
                 {
                     string[] vals=line.Split(',');
@@ -71,36 +73,6 @@ namespace StickDemo
                     }
                 }
                 tr.Close();
-                _pos = new Vector3[points.Count];
-                for (int i = 0; i < points.Count; i++)
-                {
-                    _pos[i] = new Vector3((float)points[i][0] * scale, (float)points[i][2] * scale + 10f, (float)points[i][1] * scale);
-                }
-
-                int N = 10;
-                pos = new List<Vector3>();//new Vector3[(points.Count - 1) * N];
-                for (int i = 0; i < points.Count - 2; i++)
-                {
-
-                    double x = points[i + 1][0] - points[i][0];
-                    double y = points[i + 1][1] - points[i][1];
-                    double z = points[i + 1][2] - points[i][2];
-                    double x2 = points[i + 2][0] - points[i + 1][0];
-                    double y2 = points[i + 2][1] - points[i + 1][1];
-                    double z2 = points[i + 2][2] - points[i + 1][2];
-                    double val = Math.Sqrt(x * x + y * y + z * z);
-                    double val2 = Math.Sqrt(x2 * x2 + y2 * y2 + z2 * z2);
-
-                    if (val<val2*1.5)
-                    {
-                        for (int j = i * N; j < (i + 1) * N; j++)
-                        {
-
-                            int s = j - i * N;
-                            pos.Add(new Vector3((float)(points[i + 1][0] * s / ((float)N) + points[i][0] * (N - s) / ((float)N)) * scale, (float)(points[i + 1][2] * s / ((float)N) + points[i][2] * (N - s) / ((float)N)) * scale + 10f, (float)(points[i + 1][1] * s / ((float)N) + points[i][1] * (N - s) / ((float)N)) * scale));
-                        }
-                    }
-                }
             }
 
         }
@@ -269,12 +241,17 @@ namespace StickDemo
         void dropStickAlongPath(Vector3 pathPt)
         {
             Vector3 pos = pathPt;
-            //Vector3 localInertia;
-            //box.CalculateLocalInertia(stickMass, out localInertia);
-            RigidBody cmbody = LocalCreateRigidBody(stickMass, Matrix.Translation(pos), box);
-            cmbody.Friction = friction;
-            count++;
-            sticks.Add(cmbody);
+            for(int i=0;i<4;i++)
+            {
+                for (int j = 0; j < 4;j++ )
+                {
+                    Vector3 dPos = pos + new Vector3(i - 1.5f, 0, j - 1.5f);
+                    RigidBody cmbody = LocalCreateRigidBody(stickMass, Matrix.Translation(dPos), box);
+                    cmbody.Friction = friction;
+                    count++;
+                    sticks.Add(cmbody);
+                }
+            }
 
         }
         //Similar to draw()
@@ -289,7 +266,7 @@ namespace StickDemo
                     stick.SetMassProps(0, new Vector3(0, 0, 0));
                     stick.UserObject = "static";
                     frozenSticks.Add(stick);
-                    sticks.Remove(stick);
+                    sticks.Remove(stick);                    
                 }
             }
             if (realTime>Interval)
@@ -340,9 +317,8 @@ namespace StickDemo
             cp5.addSlider("stickSizeY", (val) => { stickSizeY = (float)val * scale; renewStick(); }, 1, 50, 5, 20, 540);
             cp5.addSlider("stickSizeZ", (val) => { stickSizeZ = (float)val * scale; renewStick(); }, 50, 500, 200, 20, 590);
 
-            //cp5.addSlider("releaseHt", (val) => { releaseHt = (float)val * scale; renewHeight(); }, 500, 2000, 500, 20, 640);
+            cp5.addSlider("releaseHt", (val) => { releaseHt = (float)val * scale; renewHeight(); makeManyBoxes(); }, 0, 500, 70, 20, 640);
 
-            //cp5.addButton("freeze!", () => { freeze(); }, 20, 690);
             cp5.addButton("Run!", () => { run = !run; }, 20, 740);
             cp5.addButton("Export!", () => { export(); }, 120, 740);
             cp5.addButton("import path!", () => { import(); }, 220, 740);
@@ -351,10 +327,6 @@ namespace StickDemo
             friction = 1f;
             //stick
             stickMass = 1 * scale;
-            //Path
-            //pathStX = -500 * scale;
-            //pathEndX = 500 * scale;
-            //pathDiv = 100;
 
             Freelook.SetEyeTarget(eye, target);
             Graphics.SetFormText("BulletSharp - Benchmark Demo");
@@ -448,17 +420,19 @@ namespace StickDemo
 
             //Create a dropping path
             import();
-            //renewHeight();
+            renewHeight();
 
             //Create a base
             baseBoxes = new List<RigidBody>();
-            //renewBase();
+            renewBase();
             
             //Create a reference stick
-            box = new BoxShape(stickSizeX/2f/3f, stickSizeZ/2f/3f, stickSizeY/2f/3f);
+            box = new BoxShape(stickSizeX/2f/2f, stickSizeZ/2f/2f, stickSizeY/2f/3f);
             stickSample = LocalCreateRigidBody(0, Matrix.Translation(new Vector3(-50,0,-30)), box);
+            manyBoxes = new List<RigidBody>();
             makeManyBoxes();
-            //renewStick();
+            renewStick();
+            World.PairCache.SetOverlapFilterCallback(new myFilterCallback());
         }
         void makeManyBoxes()
         {
@@ -479,27 +453,66 @@ namespace StickDemo
                     
                 }
             }*/
+            if (manyBoxes == null) return;
+            foreach (var f in manyBoxes)
+            {
+                World.RemoveRigidBody(f);
+            }
             foreach (var v in _pos)
             {
-                RigidBody tinyBoxBody = LocalCreateRigidBody(0, Matrix.Translation(v), tinyBox);
+                var b = LocalCreateRigidBody(0, Matrix.Translation(v), tinyBox);
+                manyBoxes.Add(b);
+                b.UserObject = "ghost";
+            }
+        }
+        
+        class myFilterCallback : OverlapFilterCallback
+        {
+            public override bool NeedBroadphaseCollision(BroadphaseProxy proxy0, BroadphaseProxy proxy1)
+            {
+                bool collides = (proxy0.CollisionFilterGroup & proxy1.CollisionFilterMask) != 0;
+                collides = collides && ((proxy1.CollisionFilterGroup & proxy0.CollisionFilterMask)!=0);
+
+                RigidBody rb0=proxy0.ClientObject as RigidBody;
+                RigidBody rb1=proxy1.ClientObject as RigidBody;
+                //add some additional logic here that modified 'collides'
+                if (rb0.UserObject as string == "ghost") collides = false;
+                if (rb1.UserObject as string == "ghost") collides = false;
+                return collides;
             }
         }
         void renewHeight()
         {
-/*            if (pos == null) return;
-            pathStPt = new Vector3(0, releaseHt, 0);
-            pathEndPtU = new Vector3(pathEndX, releaseHt, 0);
-            pathEndPtV = new Vector3(0, releaseHt, pathEndX);
-            //Vector3 pathPos = new Vector3(pathStPt.X, pathStPt.Y, pathStPt.Z);
-            Vector3 pathDirU = new Vector3((pathEndPtU.X - pathStPt.X) , (pathEndPtU.Y - pathStPt.Y) , (pathEndPtU.Z - pathStPt.Z) );
-            Vector3 pathDirV = new Vector3((pathEndPtV.X - pathStPt.X) , (pathEndPtV.Y - pathStPt.Y) , (pathEndPtV.Z - pathStPt.Z) );
-            for (int i = 0; i < pathDiv; i++)
+
+            int N = 10;
+            if (points == null) return;
+            _pos = new Vector3[points.Count];
+            for (int i = 0; i < points.Count; i++)
             {
-                double theta = 2 * Math.PI * ((double)i / pathDiv);
-                Vector3 pathPos = pathStPt + pathDirU*((float)Math.Cos(theta)) + pathDirV*( (float)Math.Sin(theta));
-                pos[i] = new Vector3(pathPos.X, pathPos.Y, pathPos.Z);
+                _pos[i] = new Vector3((float)points[i][0] * scale, (float)points[i][2] * scale + releaseHt, (float)points[i][1] * scale);
             }
- * */
+
+            pos = new List<Vector3>();//new Vector3[(points.Count - 1) * N];
+            for (int i = 0; i < points.Count - 2; i++)
+            {
+                double x = points[i + 1][0] - points[i][0];
+                double y = points[i + 1][1] - points[i][1];
+                double z = points[i + 1][2] - points[i][2];
+                double x2 = points[i + 2][0] - points[i + 1][0];
+                double y2 = points[i + 2][1] - points[i + 1][1];
+                double z2 = points[i + 2][2] - points[i + 1][2];
+                double val = Math.Sqrt(x * x + y * y + z * z);
+                double val2 = Math.Sqrt(x2 * x2 + y2 * y2 + z2 * z2);
+
+                if (val < val2 * 1.5)
+                {
+                    for (int j = i * N; j < (i + 1) * N; j++)
+                    {
+                        int s = j - i * N;
+                        pos.Add(new Vector3((float)(points[i + 1][0] * s / ((float)N) + points[i][0] * (N - s) / ((float)N)) * scale, (float)(points[i + 1][2] * s / ((float)N) + points[i][2] * (N - s) / ((float)N)) * scale+releaseHt, (float)(points[i + 1][1] * s / ((float)N) + points[i][1] * (N - s) / ((float)N)) * scale));
+                    }
+                }
+            }
         }
         void renewStick()
         {
