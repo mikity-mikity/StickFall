@@ -241,11 +241,11 @@ namespace StickDemo
         void dropStickAlongPath(Vector3 pathPt)
         {
             Vector3 pos = pathPt;
-            for(int i=0;i<4;i++)
+            for(int i=0;i<6;i++)
             {
-                for (int j = 0; j < 4;j++ )
+                for (int j = 0; j < 6;j++ )
                 {
-                    Vector3 dPos = pos + new Vector3(i - 1.5f, 0, j - 1.5f);
+                    Vector3 dPos = pos + new Vector3((i - 2.5f)/5f, 0, (j - 2.5f)/5f);
                     RigidBody cmbody = LocalCreateRigidBody(stickMass, Matrix.Translation(dPos), box);
                     cmbody.Friction = friction;
                     count++;
@@ -254,6 +254,7 @@ namespace StickDemo
             }
 
         }
+        public Vector3 tmpTarget;
         //Similar to draw()
         public override void OnUpdate()
         {
@@ -275,6 +276,7 @@ namespace StickDemo
                 if (run) //When R is pressed, run turns to true. When it is pressed again, run turns to false and dropping sticks stops, but simulations goes.
                 {
                     dropStickAlongPath(pos[pathPtCount]);
+                    this.tmpTarget = pos[pathPtCount];
                     pathPtCount++;
                     if (pathPtCount >= pos.Count)
                     {
@@ -282,6 +284,7 @@ namespace StickDemo
                     }
                 }
             }
+            Freelook.SetEyeTarget(Freelook.Eye, new Vector3(Freelook.Target.X * 0.8f + tmpTarget.X * 0.2f, Freelook.Target.Y * 0.8f + tmpTarget.Y * 0.2f, Freelook.Target.Z * 0.8f + tmpTarget.Z * 0.2f));
             Graphics.SetInfoText("Press R to start simulation\n" +
                                     "F3 - Toggle debug\n" +
                                     "Space - Shoot box\n"+
@@ -292,8 +295,7 @@ namespace StickDemo
         //Camera settings
         Vector3 eye = new Vector3(0,150 , -100);
         Vector3 target = new Vector3(0, 30, 0);
-
-        bool UseParallelDispatcherBenchmark = true;   //Best setting in performance
+        bool UseParallelDispatcherBenchmark = false;   //Best setting in performance
 
         float defaultContactProcessingThreshold = 0.0f;
         ControlPanel cp5;
@@ -313,11 +315,11 @@ namespace StickDemo
             cp5.addSlider("obstacleD", (val) => { obstacleD = (float)val * scale; renewBase(); }, 1, 50, 10, 20, 390);
             cp5.addSlider("obstacleH", (val) => { obstacleH = (float)val * scale; renewBase(); }, 0, 1000, 200, 20, 440);
 
-            cp5.addSlider("stickSizeX", (val) => { stickSizeX = (float)val * scale; renewStick(); }, 1, 50, 5, 20, 490);
-            cp5.addSlider("stickSizeY", (val) => { stickSizeY = (float)val * scale; renewStick(); }, 1, 50, 5, 20, 540);
-            cp5.addSlider("stickSizeZ", (val) => { stickSizeZ = (float)val * scale; renewStick(); }, 50, 500, 200, 20, 590);
+            cp5.addSlider("stickSizeX", (val) => { stickSizeX = (float)val * scale*0.1f; renewStick(); }, 1, 50, 5, 20, 490);
+            cp5.addSlider("stickSizeY", (val) => { stickSizeY = (float)val * scale * 0.1f; renewStick(); }, 1, 50, 5, 20, 540);
+            cp5.addSlider("stickSizeZ", (val) => { stickSizeZ = (float)val * scale * 0.1f; renewStick(); }, 50, 500, 200, 20, 590);
 
-            cp5.addSlider("releaseHt", (val) => { releaseHt = (float)val * scale; renewHeight(); makeManyBoxes(); }, 0, 500, 70, 20, 640);
+            cp5.addSlider("releaseHt", (val) => { releaseHt = (float)val * scale*0.1f; renewHeight(); makeManyBoxes(); }, 0, 500, 150, 20, 640);
 
             cp5.addButton("Run!", () => { run = !run; }, 20, 740);
             cp5.addButton("Export!", () => { export(); }, 120, 740);
@@ -329,6 +331,7 @@ namespace StickDemo
             stickMass = 1 * scale;
 
             Freelook.SetEyeTarget(eye, target);
+            this.tmpTarget = new Vector3(target.X,target.Y,target.Z);
             Graphics.SetFormText("BulletSharp - Benchmark Demo");
             Graphics.SetInfoText("Press R to start simulation\n" +
                                     "F3 - Toggle debug\n" +
@@ -362,7 +365,8 @@ namespace StickDemo
         {
             // collision configuration contains default setup for memory, collision setup
             DefaultCollisionConstructionInfo cci = new DefaultCollisionConstructionInfo();
-            cci.DefaultMaxPersistentManifoldPoolSize = 32768*30;
+            cci.DefaultMaxPersistentManifoldPoolSize = 32768;
+            cci.DefaultMaxCollisionAlgorithmPoolSize = 32768;
             CollisionConf = new DefaultCollisionConfiguration(cci);
 
             if (UseParallelDispatcherBenchmark)
@@ -379,7 +383,7 @@ namespace StickDemo
             else
             {
                 Dispatcher = new CollisionDispatcher(CollisionConf);
-                Dispatcher.DispatcherFlags = DispatcherFlags.DisableContactPoolDynamicAllocation;
+                //Dispatcher.DispatcherFlags = DispatcherFlags.DisableContactPoolDynamicAllocation;
             }
 
             // the maximum size of the collision world. Make sure objects stay within these boundaries
@@ -388,10 +392,8 @@ namespace StickDemo
             Vector3 worldAabbMax = new Vector3(1000, 1000, 1000);
 
             HashedOverlappingPairCache pairCache = new HashedOverlappingPairCache();
-            
             Broadphase = new DbvtBroadphase(pairCache);
             //Broadphase = new DbvtBroadphase();
-
             if (UseParallelDispatcherBenchmark)
             {
                 ThreadSupportInterface thread = CreateSolverThreadSupport(4);
@@ -401,7 +403,6 @@ namespace StickDemo
             {
                 Solver = new SequentialImpulseConstraintSolver();
             }
-
             World = new DiscreteDynamicsWorld(Dispatcher, Broadphase, Solver, CollisionConf);
             World.Gravity = new Vector3(0, -(gravity),0);
 
@@ -411,7 +412,6 @@ namespace StickDemo
             }
             World.SolverInfo.SolverMode |= SolverModes.EnableFrictionDirectionCaching;
             World.SolverInfo.NumIterations = 5;
-
             // create the ground
             CollisionShape plane = new StaticPlaneShape(new Vector3(0,1,0),0);
             CollisionShapes.Add(plane);
@@ -428,7 +428,7 @@ namespace StickDemo
             
             //Create a reference stick
             box = new BoxShape(stickSizeX/2f/2f, stickSizeZ/2f/2f, stickSizeY/2f/3f);
-            stickSample = LocalCreateRigidBody(0, Matrix.Translation(new Vector3(-50,0,-30)), box);
+            stickSample = LocalCreateRigidBody(0, Matrix.Translation(new Vector3(-50,stickSizeZ/2f/2f,-30)), box);
             manyBoxes = new List<RigidBody>();
             makeManyBoxes();
             renewStick();
@@ -478,6 +478,9 @@ namespace StickDemo
                 //add some additional logic here that modified 'collides'
                 if (rb0.UserObject as string == "ghost") collides = false;
                 if (rb1.UserObject as string == "ghost") collides = false;
+                if (rb0.UserObject as string == "static" && rb1.UserObject as string == "static") collides = false;
+                if (rb0.UserObject as string == "static" && rb1.UserObject as string == "ground") collides = false;
+                if (rb0.UserObject as string == "ground" && rb1.UserObject as string == "static") collides = false;
                 return collides;
             }
         }
@@ -517,8 +520,9 @@ namespace StickDemo
         void renewStick()
         {
             if (box == null) return;
-            box = new BoxShape(stickSizeX/2f/5f, stickSizeZ/2f/5f, stickSizeY/2f/5f);
+            box = new BoxShape(stickSizeX/2f, stickSizeZ/2f, stickSizeY/2f);
             stickSample.CollisionShape = box;
+            stickSample.WorldTransform = Matrix.Translation(new Vector3(-50, stickSizeZ / 2f, -30));
         }
         void renewBase()
         {

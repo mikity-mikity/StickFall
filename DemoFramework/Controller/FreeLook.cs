@@ -54,11 +54,11 @@ namespace DemoFramework
 
                 if (input.KeysDown.Contains(Keys.W))
                 {
-                    Eye += flySpeed * relDirection;
+                    Eye = Target + (Target - Eye).Length()* Vector3.Multiply(direction,0.8f);
                 }
                 if (input.KeysDown.Contains(Keys.S))
                 {
-                    Eye -= flySpeed * relDirection;
+                    Eye = Target + (Target - Eye).Length() * Vector3.Multiply(direction, 1.2f);
                 }
 
                 if (input.KeysDown.Contains(Keys.A))
