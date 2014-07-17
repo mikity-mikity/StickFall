@@ -69,7 +69,7 @@ namespace StickDemo
                     string[] vals=line.Split(',');
                     if (vals.Length == 3)
                     {
-                        points.Add(new double[3] { Double.Parse(vals[0]), Double.Parse(vals[1]), Double.Parse(vals[2]) });
+                        points.Add(new double[3] { Double.Parse(vals[0]) * 0.1d, Double.Parse(vals[1]) * 0.1d, Double.Parse(vals[2]) * 0.1d });
                     }
                 }
                 tr.Close();
@@ -78,6 +78,7 @@ namespace StickDemo
         }
         void export()
         {
+            double global_scale = 10d;
             Grendgine_Collada col_scenes = null;
             col_scenes = new Grendgine_Collada();
             col_scenes.Collada_Version = "1.4.1";
@@ -132,7 +133,7 @@ namespace StickDemo
                                 for (int z = -1; z < 2; z += 2)
                                 {
                                     int index = ((x + 1) / 2) * 4 + ((y + 1) / 2) * 2 + ((z + 1) / 2) * 1;
-                                    vertices[index] = new double[3] { size.X * x, size.Y * y, size.Z * z };
+                                    vertices[index] = new double[3] { size.X * x * global_scale, size.Y * y * global_scale, size.Z * z * global_scale };
                                 }
                             }
                         }
@@ -147,7 +148,7 @@ namespace StickDemo
                                 val += "  " + vertices[j][k].ToString();
                             }
                         }
-                        geom.Mesh.Source[0].Float_Array.Value_As_String = val;// "0.0 0.0 0.0 1.0 0.0 0.0 0.0 1.0 0.0 1.0 1.0 0.0 0.0 0.0 1.0 1.0 0.0 1.0 0.0 1.0 1.0 1.0 1.0 1.0";
+                        geom.Mesh.Source[0].Float_Array.Value_As_String = val;
                     }
                 }
                 geom.Mesh.Source[0].Technique_Common = new Grendgine_Collada_Technique_Common_Source();
@@ -214,7 +215,14 @@ namespace StickDemo
                 {
                     for (int k = 0; k < 4; k++)
                     {
-                        val += "  "+T[k, j].ToString();
+                        if (k == 3 && (j == 0 || j == 1 || j == 2))
+                        {
+                            val += "  " + (T[k, j]*global_scale).ToString();
+                        }
+                        else
+                        {
+                            val += "  " + T[k, j].ToString();
+                        }
                     }
                 }
                 scene.Node[i].Matrix[0].Value_As_String = val;
@@ -237,20 +245,19 @@ namespace StickDemo
                 sr.Serialize(tr, col_scenes);
                 tr.Close();
             }
+            
         }
         void dropStickAlongPath(Vector3 pathPt)
         {
             Vector3 pos = pathPt;
-            for(int i=0;i<6;i++)
+            int N = 10;
+            for(int i=0;i<N+1;i++)
             {
-                for (int j = 0; j < 6;j++ )
-                {
-                    Vector3 dPos = pos + new Vector3((i - 2.5f)/5f, 0, (j - 2.5f)/5f);
-                    RigidBody cmbody = LocalCreateRigidBody(stickMass, Matrix.Translation(dPos), box);
-                    cmbody.Friction = friction;
-                    count++;
-                    sticks.Add(cmbody);
-                }
+                Vector3 dPos = pos + new Vector3((i - N/2f)/N*2.4f, 0, 0);
+                RigidBody cmbody = LocalCreateRigidBody(stickMass, Matrix.Translation(dPos), box);
+                cmbody.Friction = friction;
+                count++;
+                sticks.Add(cmbody);
             }
 
         }
@@ -305,9 +312,9 @@ namespace StickDemo
         {
             cp5 = new ControlPanel(900);
             cp5.addSlider("baseW", (val) => { baseW = (float)val * scale; renewBase(); }, 1, 2000, 1000, 20, 40);
-            cp5.addSlider("baseD", (val) => { baseD = (float)val * scale; renewBase(); }, 1, 500, 70, 20, 90);
-            cp5.addSlider("baseH", (val) => { baseH = (float)val * scale; renewBase(); }, 1, 500, 50, 20, 140);
-            cp5.addSlider("baseWallThickness", (val) => { baseWallThickness = (float)val * scale; renewBase(); }, 1, 30, 10, 20, 190);
+            cp5.addSlider("baseD", (val) => { baseD = (float)val * scale*0.3f; renewBase(); }, 1, 500, 70, 20, 90);
+            cp5.addSlider("baseH", (val) => { baseH = (float)val * scale*0.4f; renewBase(); }, 1, 500, 50, 20, 140);
+            cp5.addSlider("baseWallThickness", (val) => { baseWallThickness = (float)val * scale*0.4f; renewBase(); }, 1, 30, 10, 20, 190);
 
             cp5.addSlider("obstacleX", (val) => { obstacleX = val; renewBase(); }, 1, 20, 8, 20, 240);
             cp5.addSlider("obstacleY", (val) => { obstacleY = val; renewBase(); }, 1, 10, 1, 20, 290);
@@ -317,9 +324,9 @@ namespace StickDemo
 
             cp5.addSlider("stickSizeX", (val) => { stickSizeX = (float)val * scale*0.1f; renewStick(); }, 1, 50, 5, 20, 490);
             cp5.addSlider("stickSizeY", (val) => { stickSizeY = (float)val * scale * 0.1f; renewStick(); }, 1, 50, 5, 20, 540);
-            cp5.addSlider("stickSizeZ", (val) => { stickSizeZ = (float)val * scale * 0.1f; renewStick(); }, 50, 500, 200, 20, 590);
+            cp5.addSlider("stickSizeZ", (val) => { stickSizeZ = (float)val * scale * 0.1f; renewStick(); }, 50, 500, 300, 20, 590);
 
-            cp5.addSlider("releaseHt", (val) => { releaseHt = (float)val * scale*0.1f; renewHeight(); makeManyBoxes(); }, 0, 500, 150, 20, 640);
+            cp5.addSlider("releaseHt", (val) => { releaseHt = (float)val * scale*0.1f; renewHeight(); makeManyBoxes(); }, 0, 1500, 500, 20, 640);
 
             cp5.addButton("Run!", () => { run = !run; }, 20, 740);
             cp5.addButton("Export!", () => { export(); }, 120, 740);
@@ -365,8 +372,8 @@ namespace StickDemo
         {
             // collision configuration contains default setup for memory, collision setup
             DefaultCollisionConstructionInfo cci = new DefaultCollisionConstructionInfo();
-            cci.DefaultMaxPersistentManifoldPoolSize = 32768;
-            cci.DefaultMaxCollisionAlgorithmPoolSize = 32768;
+            cci.DefaultMaxPersistentManifoldPoolSize = 32768*10;
+            cci.DefaultMaxCollisionAlgorithmPoolSize = 32768*10;
             CollisionConf = new DefaultCollisionConfiguration(cci);
 
             if (UseParallelDispatcherBenchmark)

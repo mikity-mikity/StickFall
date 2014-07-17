@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using BulletSharp;
 using BulletSharp.SoftBody;
-
 namespace DemoFramework
 {
     [StructLayout(LayoutKind.Sequential)]
@@ -504,7 +503,7 @@ namespace DemoFramework
 
         public static Vector3[] CreateGImpactMesh(GImpactMeshShape shape)
         {
-            DataStream vertexBuffer, indexBuffer;
+            BulletSharp.DataStream vertexBuffer, indexBuffer;
             int numVerts, numFaces;
             PhyScalarType vertsType, indicesType;
             int vertexStride, indexStride;

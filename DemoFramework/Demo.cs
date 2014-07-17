@@ -2,7 +2,6 @@
 using System.Drawing;
 using System.Windows.Forms;
 using BulletSharp;
-
 namespace DemoFramework
 {
     public abstract class Demo : System.IDisposable
@@ -416,10 +415,9 @@ namespace DemoFramework
             }
         }
 
-        protected Vector3 GetRayTo(Point point, Vector3 eye, Vector3 target, float fov)
+        protected Vector3 GetRayTo(System.Drawing.Point point, Vector3 eye, Vector3 target, float fov)
         {
             float aspect;
-
             Vector3 rayForward = target - eye;
             rayForward.Normalize();
             const float farPlane = 10000.0f;

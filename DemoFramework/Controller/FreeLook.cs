@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Windows.Forms;
 using BulletSharp;
-
 namespace DemoFramework
 {
     public class FreeLook

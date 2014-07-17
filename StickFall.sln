@@ -5,8 +5,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoFramework", "DemoFramew
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpDX", "DemoFramework\Graphics\SharpDX\SharpDX.csproj", "{3DDE3767-7DA8-4700-A74B-EC34146AB688}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenTK", "DemoFramework\Graphics\OpenTK\OpenTK.csproj", "{3CD13788-CD50-451F-8267-AF7578403621}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StickDemo", "Stick\StickDemo.csproj", "{2E3C0C76-6223-466F-9947-6628E1BF6456}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Collada", "Collada\Collada.csproj", "{5A28319D-6809-4EA6-B085-8E58CE2990FF}"
@@ -41,15 +39,6 @@ Global
 		{3DDE3767-7DA8-4700-A74B-EC34146AB688}.Release|Mixed Platforms.Build.0 = Release|x86
 		{3DDE3767-7DA8-4700-A74B-EC34146AB688}.Release|x86.ActiveCfg = Release|x86
 		{3DDE3767-7DA8-4700-A74B-EC34146AB688}.Release|x86.Build.0 = Release|x86
-		{3CD13788-CD50-451F-8267-AF7578403621}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{3CD13788-CD50-451F-8267-AF7578403621}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
-		{3CD13788-CD50-451F-8267-AF7578403621}.Debug|Mixed Platforms.Build.0 = Debug|x86
-		{3CD13788-CD50-451F-8267-AF7578403621}.Debug|x86.ActiveCfg = Debug|x86
-		{3CD13788-CD50-451F-8267-AF7578403621}.Release|Any CPU.ActiveCfg = Release|x86
-		{3CD13788-CD50-451F-8267-AF7578403621}.Release|Mixed Platforms.ActiveCfg = Release|x86
-		{3CD13788-CD50-451F-8267-AF7578403621}.Release|Mixed Platforms.Build.0 = Release|x86
-		{3CD13788-CD50-451F-8267-AF7578403621}.Release|x86.ActiveCfg = Release|x86
-		{3CD13788-CD50-451F-8267-AF7578403621}.Release|x86.Build.0 = Release|x86
 		{2E3C0C76-6223-466F-9947-6628E1BF6456}.Debug|Any CPU.ActiveCfg = Debug|x86
 		{2E3C0C76-6223-466F-9947-6628E1BF6456}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
 		{2E3C0C76-6223-466F-9947-6628E1BF6456}.Debug|Mixed Platforms.Build.0 = Debug|x86

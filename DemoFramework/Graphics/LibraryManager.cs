@@ -18,7 +18,7 @@ namespace DemoFramework
             set;
         }
 
-        static string[] supportedLibraries = new string[] { "SharpDX (DirectX 10)", "OpenTK (OpenGL)"};
+        static string[] supportedLibraries = new string[] { "SharpDX (DirectX 10)"/*, "OpenTK (OpenGL)"*/};
         public static string[] GetSupportedLibraries()
         {
             return supportedLibraries;
