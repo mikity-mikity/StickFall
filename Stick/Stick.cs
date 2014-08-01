@@ -21,6 +21,8 @@ namespace StickDemo
         //Vector3 pathStPt, pathEndPtU, pathEndPtV;
         List<Vector3> pos;
         List<double[]> points;
+        List<double[]> angles;
+        List<double[]> interpolatedAngles;
         Vector3[] _pos;
         List<RigidBody> manyBoxes;
         //Variables
@@ -64,12 +66,14 @@ namespace StickDemo
                 List<double> sortedList = new List<double>();
                 string line;
                 points = new List<double[]>();
+                angles = new List<double[]>();
                 while ((line = tr.ReadLine()) != null)
                 {
                     string[] vals=line.Split(',');
-                    if (vals.Length == 3)
+                    if (vals.Length == 4)
                     {
-                        points.Add(new double[3] { Double.Parse(vals[0]) * 0.1d, Double.Parse(vals[1]) * 0.1d, Double.Parse(vals[2]) * 0.1d });
+                        points.Add(new double[3] { Double.Parse(vals[0]) * 0.2d, Double.Parse(vals[1]) * 0.2d, Double.Parse(vals[2]) * 0.2d });
+                        angles.Add(new double[2] { Math.Atan(Double.Parse(vals[3])), 0d });
                     }
                 }
                 tr.Close();
@@ -247,14 +251,21 @@ namespace StickDemo
             }
             
         }
-        void dropStickAlongPath(Vector3 pathPt)
+        void dropStickAlongPath(Vector3 pathPt,Vector3 vel,double angle)
         {
             Vector3 pos = pathPt;
+            vel.Y = 0;
+            vel.Normalize();
+            double theta=Math.Acos(vel.X);
+            if (vel.Z < 0) theta = -theta;
+            theta -= Math.PI / 2d;
             int N = 10;
+            angle = -Math.PI / 2d - angle;
             for(int i=0;i<N+1;i++)
             {
-                Vector3 dPos = pos + new Vector3((i - N/2f)/N*2.4f, 0, 0);
-                RigidBody cmbody = LocalCreateRigidBody(stickMass, Matrix.Translation(dPos), box);
+                double bb=(i - N/2f)/N*1.4f;
+                Vector3 dPos = pos + new Vector3((float)(bb * Math.Cos(theta)), 0f, (float)(bb * Math.Sin(theta)));
+                RigidBody cmbody = LocalCreateRigidBody(stickMass, Matrix.RotationX((float)angle) * Matrix.RotationY((float)(Math.PI / 2f - theta)) * Matrix.Translation(dPos), box);
                 cmbody.Friction = friction;
                 count++;
                 sticks.Add(cmbody);
@@ -282,10 +293,10 @@ namespace StickDemo
                 realTime -= Interval;
                 if (run) //When R is pressed, run turns to true. When it is pressed again, run turns to false and dropping sticks stops, but simulations goes.
                 {
-                    dropStickAlongPath(pos[pathPtCount]);
+                    dropStickAlongPath(pos[pathPtCount],pos[pathPtCount+1]-pos[pathPtCount],interpolatedAngles[pathPtCount][0]);
                     this.tmpTarget = pos[pathPtCount];
                     pathPtCount++;
-                    if (pathPtCount >= pos.Count)
+                    if (pathPtCount >= pos.Count-1)
                     {
                         pathPtCount = 0;
                     }
@@ -445,21 +456,7 @@ namespace StickDemo
         {
             float margin=0.02f;
             BoxShape tinyBox = new BoxShape(0.2f - margin, 0.2f - margin, 0.2f - margin);
-            /*for (int x = 0; x < 200; x++)
-            {
-                for (int y = 0; y < 200; y++)
-                {
-                    if (y < 50)
-                    {
-                        RigidBody tinyBoxBody = LocalCreateRigidBody(0, Matrix.Translation(new Vector3(x - 100, y + 5, 0)), tinyBox);
-                    }
-                    else
-                    {
-                        RigidBody tinyBoxBody = LocalCreateRigidBody(1, Matrix.Translation(new Vector3(x - 100, y + 5, 0)), tinyBox);
-                    }
-                    
-                }
-            }*/
+
             if (manyBoxes == null) return;
             foreach (var f in manyBoxes)
             {
@@ -503,6 +500,7 @@ namespace StickDemo
             }
 
             pos = new List<Vector3>();//new Vector3[(points.Count - 1) * N];
+            interpolatedAngles = new List<double[]>();
             for (int i = 0; i < points.Count - 2; i++)
             {
                 double x = points[i + 1][0] - points[i][0];
@@ -520,6 +518,7 @@ namespace StickDemo
                     {
                         int s = j - i * N;
                         pos.Add(new Vector3((float)(points[i + 1][0] * s / ((float)N) + points[i][0] * (N - s) / ((float)N)) * scale, (float)(points[i + 1][2] * s / ((float)N) + points[i][2] * (N - s) / ((float)N)) * scale+releaseHt, (float)(points[i + 1][1] * s / ((float)N) + points[i][1] * (N - s) / ((float)N)) * scale));
+                        interpolatedAngles.Add(new double[2] { angles[i + 1][0] * s / ((float)N) + angles[i][0] * (N - s)/((float)N), angles[i + 1][1] * s / ((float)N) + angles[i][1] * (N - s) });
                     }
                 }
             }
