@@ -72,8 +72,10 @@ namespace StickDemo
                     string[] vals=line.Split(',');
                     if (vals.Length == 4)
                     {
-                        points.Add(new double[3] { Double.Parse(vals[0]) * 0.2d, Double.Parse(vals[1]) * 0.2d, Double.Parse(vals[2]) * 0.2d });
-                        angles.Add(new double[2] { Math.Atan(Double.Parse(vals[3])), 0d });
+                        points.Add(new double[3] { Double.Parse(vals[0]) * 0.1d, Double.Parse(vals[1]) * 0.1d, Double.Parse(vals[2]) * 0.1d });
+                        double angle=Math.Atan(Double.Parse(vals[3]));
+                        if (angle < 0) angle += Math.PI;
+                        angles.Add(new double[2] { angle, 0d });
                     }
                 }
                 tr.Close();
@@ -259,13 +261,14 @@ namespace StickDemo
             double theta=Math.Acos(vel.X);
             if (vel.Z < 0) theta = -theta;
             theta -= Math.PI / 2d;
-            int N = 10;
+            int N = 10;//10
+            //angle = -1.2;
             angle = -Math.PI / 2d - angle;
             for(int i=0;i<N+1;i++)
             {
                 double bb=(i - N/2f)/N*1.4f;
                 Vector3 dPos = pos + new Vector3((float)(bb * Math.Cos(theta)), 0f, (float)(bb * Math.Sin(theta)));
-                RigidBody cmbody = LocalCreateRigidBody(stickMass, Matrix.RotationX((float)angle) * Matrix.RotationY((float)(Math.PI / 2f - theta)) * Matrix.Translation(dPos), box);
+                RigidBody cmbody = LocalCreateRigidBody(stickMass, Matrix.Translation(0, -stickSizeZ * 0.5f, 0) * Matrix.RotationX((float)angle) * Matrix.RotationY((float)(Math.PI / 2f - theta)) * Matrix.Translation(dPos), box);
                 cmbody.Friction = friction;
                 count++;
                 sticks.Add(cmbody);
@@ -322,9 +325,9 @@ namespace StickDemo
         protected override void OnInitialize()
         {
             cp5 = new ControlPanel(900);
-            cp5.addSlider("baseW", (val) => { baseW = (float)val * scale; renewBase(); }, 1, 2000, 1000, 20, 40);
-            cp5.addSlider("baseD", (val) => { baseD = (float)val * scale*0.3f; renewBase(); }, 1, 500, 70, 20, 90);
-            cp5.addSlider("baseH", (val) => { baseH = (float)val * scale*0.4f; renewBase(); }, 1, 500, 50, 20, 140);
+//            cp5.addSlider("baseW", (val) => { baseW = (float)val * scale; renewBase(); }, 1, 3000, 2000, 20, 40);
+            cp5.addSlider("baseD", (val) => { baseD = (float)val * scale*0.1f; renewBase(); }, 1, 10000, 300, 20, 90);
+            cp5.addSlider("baseH", (val) => { baseH = (float)val * scale*0.1f; renewBase(); }, 1, 10000, 120, 20, 140);
             cp5.addSlider("baseWallThickness", (val) => { baseWallThickness = (float)val * scale*0.4f; renewBase(); }, 1, 30, 10, 20, 190);
 
             cp5.addSlider("obstacleX", (val) => { obstacleX = val; renewBase(); }, 1, 20, 8, 20, 240);
@@ -333,11 +336,11 @@ namespace StickDemo
             cp5.addSlider("obstacleD", (val) => { obstacleD = (float)val * scale; renewBase(); }, 1, 50, 10, 20, 390);
             cp5.addSlider("obstacleH", (val) => { obstacleH = (float)val * scale; renewBase(); }, 0, 1000, 200, 20, 440);
 
-            cp5.addSlider("stickSizeX", (val) => { stickSizeX = (float)val * scale*0.1f; renewStick(); }, 1, 50, 5, 20, 490);
-            cp5.addSlider("stickSizeY", (val) => { stickSizeY = (float)val * scale * 0.1f; renewStick(); }, 1, 50, 5, 20, 540);
+            cp5.addSlider("stickSizeX", (val) => { stickSizeX = (float)val * scale*0.01f; renewStick(); }, 1, 500, 50, 20, 490);
+            cp5.addSlider("stickSizeY", (val) => { stickSizeY = (float)val * scale * 0.01f; renewStick(); }, 1, 500, 50, 20, 540);
             cp5.addSlider("stickSizeZ", (val) => { stickSizeZ = (float)val * scale * 0.1f; renewStick(); }, 50, 500, 300, 20, 590);
 
-            cp5.addSlider("releaseHt", (val) => { releaseHt = (float)val * scale*0.1f; renewHeight(); makeManyBoxes(); }, 0, 1500, 500, 20, 640);
+            cp5.addSlider("releaseHt", (val) => { releaseHt = (float)val * scale*0.1f; renewHeight(); makeManyBoxes(); }, 0, 1500, 120, 20, 640);
 
             cp5.addButton("Run!", () => { run = !run; }, 20, 740);
             cp5.addButton("Export!", () => { export(); }, 120, 740);
@@ -445,8 +448,8 @@ namespace StickDemo
             renewBase();
             
             //Create a reference stick
-            box = new BoxShape(stickSizeX/2f/2f, stickSizeZ/2f/2f, stickSizeY/2f/3f);
-            stickSample = LocalCreateRigidBody(0, Matrix.Translation(new Vector3(-50,stickSizeZ/2f/2f,-30)), box);
+            box = new BoxShape(stickSizeX/2f, stickSizeZ/2f, stickSizeY/2f);
+            stickSample = LocalCreateRigidBody(0, Matrix.Translation(new Vector3(-50,stickSizeZ/2f,-30)), box);
             manyBoxes = new List<RigidBody>();
             makeManyBoxes();
             renewStick();
@@ -491,7 +494,7 @@ namespace StickDemo
         void renewHeight()
         {
 
-            int N = 10;
+            int N = 5;
             if (points == null) return;
             _pos = new Vector3[points.Count];
             for (int i = 0; i < points.Count; i++)
